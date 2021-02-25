@@ -6,7 +6,7 @@ import { Running, Cycling } from '../model/Workout.js';
 // prettier-ignore
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-const containerWorkouts = document.querySelector('.workouts');
+// const containerWorkouts = document.querySelector('.workouts');
 const form = document.querySelector('.form');
 const inputType = document.querySelector('.form__input--type');
 
@@ -46,14 +46,15 @@ class App {
 
   _renderWorkoutList() {
     let workoutHTML = '';
+    const containerWorkouts = document.querySelector('#containerWorkouts');
 
-    function capitalizeFirstLetter(string) {
-      return string.charAt(0).toUpperCase() + string.slice(1);
-    }
-
-    this.workoutList.forEach(workout => {
-      workoutHTML = `
-        <li class="workout workout--${workout.type}" data-id="1234567890">
+    //render workout from newest to oldest
+    this.workoutList
+      .slice()
+      .reverse()
+      .forEach(workout => {
+        workoutHTML += `
+        <li class="workout workout--${workout.type}" >
           <h2 class="workout__title">${capitalizeFirstLetter(
             workout.type
           )} on ${new Date().toDateString()}</h2>
@@ -71,71 +72,103 @@ class App {
           </div>
           <div class="workout__details">
             <span class="workout__icon">⚡️</span>
-            <span class="workout__value">${(
-              workout.duration / workout.distance
-            ).toFixed(1)}</span>
-            <span class="workout__unit">min/km</span>
+            <span class="workout__value"> ${
+              workout.type === 'running' ? workout.pace : workout.speed
+            }</span>
+            <span class="workout__unit">
+            ${workout.type === 'running' ? 'min/km' : 'km/h'}
+            </span>
           </div>
           <div class="workout__details">
-            <span class="workout__icon">🦶🏼</span>
-            <span class="workout__value">${
-              workout.type === 'running' ? workout.cadence : workout.elevGain
+            <span class="workout__icon"> ${
+              workout.type === 'running' ? '🦶🏼' : '⛰'
             }</span>
-            <span class="workout__unit">spm</span>
+            <span class="workout__value">${
+              workout.type === 'running' ? workout.cadence : workout.elevation
+            }</span>
+            <span class="workout__unit">${
+              workout.type === 'running' ? 'spm' : 'm'
+            }</span>
           </div>
         </li>
         `;
-
-      containerWorkouts.insertAdjacentHTML('beforeend', workoutHTML);
-    });
+      });
+    containerWorkouts.innerHTML = workoutHTML;
   }
 
   _renderWorkoutListOnMap() {
     this.workoutList.forEach(workout => {
-      renderPopup(workout.coords);
+      renderPopup(workout);
     });
   }
 
   _createWorkout() {
-    const inputDistance = document.querySelector('.form__input--distance');
-    const inputDuration = document.querySelector('.form__input--duration');
-    const inputCadence = document.querySelector('.form__input--cadence');
-    const inputElevation = document.querySelector('.form__input--elevation');
+    const allNumber = (...inputs) => inputs.every(inp => Number.isFinite(inp));
 
+    const allPositive = (...inputs) => inputs.every(inp => inp > 0);
+
+    //get input value from Form
+    const distance = +document.querySelector('.form__input--distance').value;
+    const duration = +document.querySelector('.form__input--duration').value;
+
+    //generate id and date for workout object
     const id = Math.random().toFixed(6).toString();
     const date = new Date().toLocaleDateString();
 
-    let workout = {};
+    let workout = null;
 
+    //check to create running or cycling object
     if (inputType.value === 'running') {
-      // workout.cadence = inputCadence.value;
+      const cadence = +document.querySelector('.form__input--cadence').value;
+
+      //validate input
+      if (
+        !allNumber(distance, duration, cadence) ||
+        !allPositive(distance, duration, cadence)
+      )
+        return alert('Please enter a positive number');
+
       workout = new Running(
         inputType.value,
         id,
         date,
         [workoutCoords[0], workoutCoords[1]],
-        inputDistance.value,
-        inputDuration.value,
-        inputCadence.value
+        distance,
+        duration,
+        cadence
       );
     } else {
-      // workout.elevGain = inputElevation.value;
+      //elevation can be negative number
+      const elevation = +document.querySelector('.form__input--elevation')
+        .value;
+
+      //validate input
+      if (
+        !allNumber(distance, duration, elevation) ||
+        !allPositive(distance, duration)
+      )
+        return alert('Please enter a number');
+
       workout = new Cycling(
         inputType.value,
         id,
         date,
         [workoutCoords[0], workoutCoords[1]],
-        inputDistance.value,
-        inputDuration.value,
-        inputElevation.value
+        distance,
+        duration,
+        elevation
       );
     }
 
+    //add object to workout list
     this.workoutList.push(workout);
-    renderPopup(workoutCoords);
+    console.log(this.workoutList);
+    renderPopup(workout);
     this._renderWorkoutList();
+
+    //close workout Form
     closeWorkoutForm();
-    clearWorkoutForm();
+
     saveLocalStorage();
   }
 }
@@ -149,40 +182,38 @@ const onMapClick = e => {
   const { lat, lng } = e.latlng;
   workoutCoords = [lat, lng];
 
-  closeWorkoutList();
-  renderWorkoutForm();
+  //render workout form
+  form.classList.remove('hidden');
 };
 
-const renderPopup = coords => {
-  L.marker(coords)
+const capitalizeFirstLetter = string => {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+};
+
+const renderPopup = workout => {
+  L.marker(workout.coords)
     .addTo(mymap)
     .bindPopup(
       L.popup({
         autoClose: false,
         closeOnClick: false,
+        className: `${workout.type}-popup`,
       })
     )
-    .setPopupContent('A nice popup')
+    .setPopupContent(
+      `${workout.type === 'running' ? '🏃‍♂️' : '🚴‍♀️'}  ${capitalizeFirstLetter(
+        workout.type
+      )} on ${workout.date}`
+    )
     .openPopup();
 };
 
-const closeWorkoutList = () => {
-  const workoutListEle = document.querySelectorAll('.workouts li');
-  workoutListEle.forEach(workoutEle => {
-    workoutEle.style.display = 'none';
-  });
-};
-
-const renderWorkoutForm = () => {
-  form.classList.remove('hidden');
-};
-
 const closeWorkoutForm = () => {
-  form.classList.add('hidden');
-};
-
-const clearWorkoutForm = () => {
   form.reset();
+
+  form.style.display = 'none';
+  form.classList.add('hidden');
+  setTimeout(() => (form.style.display = 'grid'), 1000);
 };
 
 inputType.addEventListener('change', e => {
@@ -203,8 +234,6 @@ const saveLocalStorage = () => {
 
 const getLocalStorage = () => {
   app.workoutList = JSON.parse(localStorage.getItem('workoutList')) || [];
-
-  // console.log(app.workoutList);
 };
 
 //-----call function global-------- ---

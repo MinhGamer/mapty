@@ -14,7 +14,7 @@ export class Running extends Workout {
     this.type = _type;
     this.cadence = _cadence;
     // min/km
-    this.pace = (this.duration / this.distance).toFixed(1);
+    this.pace = (+this.duration / +this.distance).toFixed(1);
   }
 }
 
@@ -24,6 +24,6 @@ export class Cycling extends Workout {
     this.type = _type;
     this.elevation = _elevation;
     // km/h
-    this.speed = (this.distance / (this.duration / 60)).toFixed(1);
+    this.speed = (+this.distance / (+this.duration / 60)).toFixed(1);
   }
 }
