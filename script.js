@@ -7,14 +7,17 @@ const containerWorkouts = document.querySelector('.workouts');
 const form = document.querySelector('.form');
 const inputType = document.querySelector('.form__input--type');
 
-let mymap = null;
+let mymap = {};
+
+//a new coords when user click on the map
+let newCoords = [];
 
 const onMapClick = e => {
   const { lat, lng } = e.latlng;
-  const coords = [lat, lng];
+  newCoords = [lat, lng];
 
-  createPopup(coords);
   renderForm();
+  //   createPopup(coords);
 };
 
 const createPopup = coords => {
@@ -59,28 +62,10 @@ const renderMap = () => {
 
 const renderForm = () => {
   form.classList.remove('hidden');
+};
 
-  inputType.addEventListener('change', e => {
-    if (e.target.value === 'running') {
-      document
-        .querySelector('#inputCadence')
-        .classList.remove('form__row--hidden');
-
-      document
-        .querySelector('#inputElevGain')
-        .classList.add('form__row--hidden');
-    } else {
-      document
-        .querySelector('#inputCadence')
-        .classList.add('form__row--hidden');
-
-      document
-        .querySelector('#inputElevGain')
-        .classList.remove('form__row--hidden');
-    }
-
-    renderForm();
-  });
+const closeForm = () => {
+  form.classList.add('hidden');
 };
 
 const createWorkout = () => {
@@ -96,14 +81,28 @@ const createWorkout = () => {
     distance: inputDistance.value,
   };
 
-  if (inputType === 'running') {
+  if (inputType.value === 'running') {
     workout.cadence = inputCadence.value;
   } else {
     workout.elevGain = inputElevation.value;
   }
 
   console.log(workout);
+  createPopup(newCoords);
+  closeForm();
 };
+
+inputType.addEventListener('change', e => {
+  document.querySelector('#inputCadence').classList.toggle('form__row--hidden');
+  document
+    .querySelector('#inputElevGain')
+    .classList.toggle('form__row--hidden');
+});
+
+form.addEventListener('submit', e => {
+  e.preventDefault();
+  createWorkout();
+});
 
 //-----call function global-------- ---
 renderMap();
