@@ -4,6 +4,8 @@
 const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 const containerWorkouts = document.querySelector('.workouts');
+const form = document.querySelector('.form');
+const inputType = document.querySelector('.form__input--type');
 
 let mymap = null;
 
@@ -16,14 +18,15 @@ const onMapClick = e => {
 };
 
 const createPopup = coords => {
-  //   L.popup()
-  //     .setLatLng(coords)
-  //     .setContent('I am a standalone popup.')
-  //     .openOn(mymap);
-
   L.marker(coords)
     .addTo(mymap)
-    .bindPopup('A pretty CSS3 popup.<br> Easily customizable.')
+    .bindPopup(
+      L.popup({
+        autoClose: false,
+        closeOnClick: false,
+      })
+    )
+    .setPopupContent('A nice popup')
     .openPopup();
 };
 
@@ -55,19 +58,52 @@ const renderMap = () => {
 };
 
 const renderForm = () => {
-  const form = document.querySelector('.form');
   form.classList.remove('hidden');
+
+  inputType.addEventListener('change', e => {
+    if (e.target.value === 'running') {
+      document
+        .querySelector('#inputCadence')
+        .classList.remove('form__row--hidden');
+
+      document
+        .querySelector('#inputElevGain')
+        .classList.add('form__row--hidden');
+    } else {
+      document
+        .querySelector('#inputCadence')
+        .classList.add('form__row--hidden');
+
+      document
+        .querySelector('#inputElevGain')
+        .classList.remove('form__row--hidden');
+    }
+
+    renderForm();
+  });
 };
 
 const createWorkout = () => {
-  const inputType = document.querySelector('.form__input--type');
   const inputDistance = document.querySelector('.form__input--distance');
   const inputDuration = document.querySelector('.form__input--duration');
   const inputCadence = document.querySelector('.form__input--cadence');
   const inputElevation = document.querySelector('.form__input--elevation');
+  const id = Math.random().toString();
+  const workout = {
+    id: id,
+    type: inputType.value,
+    duration: inputDuration.value,
+    distance: inputDistance.value,
+  };
 
-  const workout = {};
+  if (inputType === 'running') {
+    workout.cadence = inputCadence.value;
+  } else {
+    workout.elevGain = inputElevation.value;
+  }
+
+  console.log(workout);
 };
 
-//-----call function global-----------
+//-----call function global-------- ---
 renderMap();
