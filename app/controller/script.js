@@ -54,7 +54,7 @@ class App {
       .reverse()
       .forEach(workout => {
         workoutHTML += `
-        <li class="workout workout--${workout.type}" >
+        <li id="abc${workout.id}" class="workout workout--${workout.type}" >
           <h2 class="workout__title">${capitalizeFirstLetter(
             workout.type
           )} on ${new Date().toDateString()}</h2>
@@ -93,7 +93,14 @@ class App {
         </li>
         `;
       });
+
     containerWorkouts.innerHTML = workoutHTML;
+
+    this.workoutList.forEach(workout => {
+      document
+        .getElementById(`abc${workout.id}`)
+        .addEventListener('click', () => this._moveToPopup(workout.id));
+    });
   }
 
   _renderWorkoutListOnMap() {
@@ -171,6 +178,14 @@ class App {
 
     saveLocalStorage();
   }
+
+  _moveToPopup(id) {
+    const workout = this.workoutList.find(workout => workout.id === id);
+    mymap.setView(workout.coords, 13, {
+      animate: true,
+      duration: 0.5,
+    });
+  }
 }
 
 let mymap = {};
@@ -238,3 +253,5 @@ const getLocalStorage = () => {
 
 //-----call function global-------- ---
 const app = new App();
+
+// window.moveToPopup = app._moveToPopup;
